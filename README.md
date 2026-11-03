@@ -17,9 +17,3 @@ contenthive.json     # repository metadata for the Content Hive plugin catalog
 ## Disclaimer
 
 > This plugin fetches content via X(Twitter) public APIs. Please ensure compliance with X's Terms of Service and applicable local laws before use. Platform policy changes may cause the plugin to stop working.
-
-## Releasing
-
-1. Bump `version` and rewrite `release_notes` in `plugin/manifest.json`.
-2. Merge into `main`.
-3. Publish a GitHub Release whose tag is `v<version>` (for example `v0.1.1`).
