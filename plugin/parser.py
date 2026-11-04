@@ -5,12 +5,16 @@ from email.utils import parsedate_to_datetime
 
 from contenthive.plugins.context import PluginContext
 from contenthive.plugins.contracts import (
+    CoverStream,
+    ImageStream,
     MediaType,
     ParserAuthorInfo,
     ParserMediaInfo,
     ParserPlatformInfo,
     ParserResult,
     ParserResultStatus,
+    VideoStream,
+    source_key_from_url,
 )
 
 from .api_client import TwitterAPIClient
@@ -122,16 +126,35 @@ class TwitterParser:
                 cover_url = item.get("media_url_https") or None
                 original = item.get("original_info", {})
 
-                result.append(
-                    ParserMediaInfo(
-                        url=best["url"],
-                        type=MediaType.VIDEO if media_type == "video" else MediaType.GIF,
-                        cover=cover_url,
-                        duration=video_info.get("duration_millis"),
-                        width=original.get("width"),
-                        height=original.get("height"),
+                width = original.get("width")
+                height = original.get("height")
+                if media_type == "video":
+                    streams: list = [
+                        VideoStream(urls=[best["url"]], width=width, height=height),
+                    ]
+                    if cover_url:
+                        streams.append(CoverStream(urls=[cover_url]))
+                    result.append(
+                        ParserMediaInfo(
+                            source_key=source_key_from_url(best["url"]),
+                            type=MediaType.VIDEO,
+                            duration=video_info.get("duration_millis"),
+                            width=width,
+                            height=height,
+                            streams=streams,
+                        )
                     )
-                )
+                else:
+                    result.append(
+                        ParserMediaInfo(
+                            source_key=source_key_from_url(best["url"]),
+                            type=MediaType.GIF,
+                            duration=video_info.get("duration_millis"),
+                            width=width,
+                            height=height,
+                            streams=[ImageStream(urls=[best["url"]], width=width, height=height)],
+                        )
+                    )
 
             elif media_type == "photo":
                 base_url = item.get("media_url_https") or ""
@@ -142,14 +165,15 @@ class TwitterParser:
                 original = item.get("original_info", {})
                 sizes = item.get("sizes", {})
                 large_size = sizes.get("large", {})
+                width = original.get("width") or large_size.get("w")
+                height = original.get("height") or large_size.get("h")
                 result.append(
                     ParserMediaInfo(
-                        url=img_url,
+                        source_key=source_key_from_url(img_url),
                         type=MediaType.IMAGE,
-                        cover=None,
-                        duration=None,
-                        width=original.get("width") or large_size.get("w"),
-                        height=original.get("height") or large_size.get("h"),
+                        width=width,
+                        height=height,
+                        streams=[ImageStream(urls=[img_url], width=width, height=height)],
                     )
                 )
             else:
