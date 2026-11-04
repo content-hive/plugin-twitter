@@ -145,6 +145,11 @@ class TwitterParser:
                         )
                     )
                 else:
+                    streams = [
+                        VideoStream(urls=[best["url"]], width=width, height=height),
+                    ]
+                    if cover_url:
+                        streams.append(CoverStream(urls=[cover_url]))
                     result.append(
                         ParserMediaInfo(
                             source_key=source_key_from_url(best["url"]),
@@ -152,7 +157,7 @@ class TwitterParser:
                             duration=video_info.get("duration_millis"),
                             width=width,
                             height=height,
-                            streams=[ImageStream(urls=[best["url"]], width=width, height=height)],
+                            streams=streams,
                         )
                     )
 
