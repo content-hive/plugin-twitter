@@ -173,7 +173,26 @@ class TwitterAPIClient:
                 f"core_keys={list(core.keys())}, user_result_keys={list(user_result.keys())}"
             )
 
+        # Long-form posts keep only a preview in legacy.full_text. The full body
+        # is a sibling of legacy, so copy it onto the tweet dict for the parser.
+        note_text = self._note_tweet_text(tweet_result)
+        if note_text:
+            tweet["note_text"] = note_text
+
         return tweet, user
+
+    @staticmethod
+    def _note_tweet_text(tweet_result: dict) -> str | None:
+        """Return Note Tweet body text, when present.
+
+        Path: note_tweet.note_tweet_results.result.text
+        """
+        note = tweet_result.get("note_tweet") or {}
+        result = (note.get("note_tweet_results") or {}).get("result") or {}
+        text = result.get("text") if isinstance(result, dict) else None
+        if isinstance(text, str) and text.strip():
+            return text
+        return None
 
     def _graphql_to_tweet_user(self, result: dict) -> tuple[dict, dict]:
         """Extract legacy tweet and user dicts from a GraphQL TweetResultByRestId response."""

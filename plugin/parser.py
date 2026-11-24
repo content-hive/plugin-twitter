@@ -67,10 +67,18 @@ class TwitterParser:
     def _parse_content(self, tweet: dict) -> str | None:
         """Extract clean tweet text, stripping trailing media t.co URLs.
 
-        Prefers display_text_range to slice the text to the visible range,
-        which excludes trailing media attachment links. Falls back to stripping
-        trailing https://t.co/... patterns when the range is unavailable.
+        Note Tweets store the full body on note_text (copied from note_tweet by
+        the API client). That text is already the visible body, so
+        display_text_range must not be applied — the range belongs to the short
+        legacy preview. Otherwise slice full_text with display_text_range, which
+        excludes trailing media attachment links. Fall back to stripping a
+        trailing https://t.co/... pattern when the range is unavailable.
         """
+        note_text = tweet.get("note_text")
+        if isinstance(note_text, str) and note_text.strip():
+            text = re.sub(r"\s*https://t\.co/\S+$", "", note_text).rstrip()
+            return text.strip() or None
+
         full_text = tweet.get("full_text") or tweet.get("text") or ""
         if not full_text:
             return None
